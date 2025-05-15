@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Blur image on browser</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2em;
+      background: #f8f8f8;
+      text-align: center;
+    }
+    input, button {
+      margin: 1em;
+    }
+    canvas {
+      margin-top: 1em;
+      border: 1px solid #ccc;
+      display: block;
+      max-width: 100%;
+    }
+    #blurValue {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Preview blurred image and downlod</h1>
+
+  <input type="file" id="imageInput" accept="image/*"><br>
+
+  <label for="blurSlider">Blur Amount: <span id="blurValue">8</span>px</label><br>
+  <input type="range" id="blurSlider" min="0" max="200" value="32"><br>
+
+  Input Image <span id="filename"></span>
+  <canvas id="canvasOrig" width="500" height="500"></canvas><br>
+
+  Output Image <span id="outname"></span>
+  <canvas id="canvas" width="500" height="500"></canvas><br>
+
+ <button id="downloadBtn" disabled>Download</button>
+
+  <script>
+    const imageInput = document.getElementById('imageInput');
+    const blurSlider = document.getElementById('blurSlider');
+    const blurValueDisplay = document.getElementById('blurValue');
+    const canvasOrig = document.getElementById('canvasOrig');
+    const ctxOrig = canvasOrig.getContext('2d');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    let filename = '';
+    const filenameTag = document.getElementById('filename');
+    let outname = '';
+    const outnameTag = document.getElementById('outname');
+    let img = new Image();
+
+    function drawImageWithBlur() {
+      const blurAmount = blurSlider.value;
+      blurValueDisplay.textContent = blurAmount;
+      if (!img.src) return;
+
+      // resize canvas
+      canvasOrig.width = img.width;
+      canvasOrig.height = img.height;
+      ctxOrig.drawImage(img, 0, 0, img.width, img.height);
+
+
+      // resize canvas
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      // apply blur
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.filter = `blur(${blurAmount}px)`;
+      ctx.drawImage(img, 0, 0, img.width, img.height);
+    }
+
+    imageInput.addEventListener('change', function () {
+      const file = this.files[0];
+      if (!file) return;
+      filename = file.name;
+      outname = filename.replace(/\.[^.]+$/, '')+'_blur.png';
+      filenameTag.innerText = filename;
+      outnameTag.innerText = outname;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        img = new Image();
+        img.onload = function () {
+          drawImageWithBlur();
+          downloadBtn.disabled = false;
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    blurSlider.addEventListener('input', drawImageWithBlur);
+
+    downloadBtn.addEventListener('click', function () {
+      const link = document.createElement('a');
+      link.download = outname;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  </script>
+</body>
+</html>
